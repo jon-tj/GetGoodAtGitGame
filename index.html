@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Good At Git Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <span class="title">Get Good At Git Game</span>
+            <div class="window-controls">
+                <span class="control minimize"></span>
+                <span class="control maximize"></span>
+                <span class="control close"></span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar / Explorer -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <span>EXPLORER</span>
+                </div>
+                <div class="project-header">
+                    <span class="arrow">▼</span> MY-PROJECT
+                </div>
+                <div id="file-tree" class="file-tree">
+                    <!-- Files will be populated here -->
+                </div>
+            </div>
+
+            <!-- Editor Area -->
+            <div class="editor-area">
+                <div class="tabs">
+                    <div class="tab active">
+                        <span class="tab-icon">📄</span>
+                        <span id="current-file-tab">.gitignore</span>
+                    </div>
+                </div>
+                <div class="editor-content">
+                    <div class="line-numbers" id="line-numbers"></div>
+                    <div class="code-area">
+                        <div id="gitignore-content" class="gitignore-entries"></div>
+                        <input type="text" id="gitignore-input" placeholder="Type filename to ignore and press Enter..." autocomplete="off">
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Preview Panel -->
+            <div class="preview-panel" id="preview-panel">
+                <div class="preview-header">
+                    <span>FILE PREVIEW</span>
+                    <button id="close-preview" class="close-btn">×</button>
+                </div>
+                <div id="preview-content" class="preview-content">
+                    <p class="preview-hint">Click a file to preview its contents</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span id="level-indicator">Level 1</span>
+                <span class="separator">|</span>
+                <span id="mode-indicator">Normal Mode</span>
+            </div>
+            <div class="status-center">
+                <span id="timer">Time: 0.0s</span>
+                <span class="separator">|</span>
+                <span id="score">Score: 0</span>
+            </div>
+            <div class="status-right">
+                <span id="progress">0 / 0 files ignored</span>
+            </div>
+        </div>
+
+        <!-- Game Over / Level Complete Overlay -->
+        <div id="overlay" class="overlay hidden">
+            <div class="overlay-content">
+                <h2 id="overlay-title">Level Complete!</h2>
+                <p id="overlay-message"></p>
+                <div id="overlay-stats"></div>
+                <div class="overlay-buttons">
+                    <button id="btn-retry" class="btn">Retry</button>
+                    <button id="btn-next" class="btn btn-primary">Next Level</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <div class="overlay-content start-content">
+                <h1>🎮 Get Good At Git</h1>
+                <p>Ignore files as fast as possible!</p>
+                <div class="mode-selection">
+                    <h3>Select Mode:</h3>
+                    <button id="btn-normal" class="btn btn-primary btn-large">
+                        <span class="btn-title">Normal Mode</span>
+                        <span class="btn-desc">Labels show which files to ignore</span>
+                    </button>
+                    <button id="btn-pro" class="btn btn-large">
+                        <span class="btn-title">🔥 Pro Mode</span>
+                        <span class="btn-desc">No labels! Find the API keys yourself</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
