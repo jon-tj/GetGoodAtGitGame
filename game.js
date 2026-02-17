@@ -74,6 +74,73 @@ const levels = [
             { name: "id_rsa", icon: "🔑", shouldIgnore: true, content: '-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAA...\nThis is a private SSH key!\nNEVER commit this!\n-----END OPENSSH PRIVATE KEY-----' },
             { name: "README.md", icon: "📝", shouldIgnore: false, content: '# My Awesome Project\n\nThis is a full-stack application.\n\n## Getting Started\n\n1. Clone the repo\n2. Run `npm install`\n3. Create `.env` file\n4. Run `npm start`' }
         ]
+    },
+    {
+        name: "Config Chaos",
+        files: [
+            { name: "config/database.json", icon: "📦", shouldIgnore: false, content: '{\n  "host": "localhost",\n  "port": 5432,\n  "name": "myapp_db"\n}' },
+            { name: "config/database.local.json", icon: "📦", shouldIgnore: true, content: '{\n  "host": "localhost",\n  "password": "dev_password_123",\n  "apiKey": "sk_test_localkey"\n}' },
+            { name: "config/app.json", icon: "📦", shouldIgnore: false, content: '{\n  "name": "MyApp",\n  "version": "1.0.0",\n  "debug": false\n}' },
+            { name: "config/secrets.json", icon: "🔑", shouldIgnore: true, content: '{\n  "jwt_secret": "super-secret-jwt-key-12345",\n  "encryption_key": "AES256-encryption-key"\n}' },
+            { name: ".env", icon: "⚙️", shouldIgnore: true, content: 'NODE_ENV=development\nPORT=3000\nAPI_KEY=sk_live_production_key' },
+            { name: ".env.example", icon: "⚙️", shouldIgnore: false, content: 'NODE_ENV=development\nPORT=3000\nAPI_KEY=your_api_key_here' },
+            { name: "src/index.js", icon: "📜", shouldIgnore: false, content: 'const config = require("./config");\nconsole.log("Starting app...");' },
+            { name: "logs/app.log", icon: "📋", shouldIgnore: true, content: '[INFO] 2024-01-15 Server started\n[DEBUG] Connection established' },
+            { name: "logs/error.log", icon: "📋", shouldIgnore: true, content: '[ERROR] 2024-01-15 Something went wrong\n[ERROR] Stack trace...' },
+            { name: "logs/.gitkeep", icon: "📄", shouldIgnore: false, content: '# This file keeps the logs folder in git\n# But actual log files should be ignored' }
+        ]
+    },
+    {
+        name: "Build Artifacts",
+        files: [
+            { name: "src/app.ts", icon: "📘", shouldIgnore: false, content: 'import express from "express";\nconst app = express();\nexport default app;' },
+            { name: "src/utils.ts", icon: "📘", shouldIgnore: false, content: 'export const helper = () => "hello";' },
+            { name: "dist/app.js", icon: "📜", shouldIgnore: true, content: '"use strict";\nvar express = require("express");\n// Compiled output' },
+            { name: "dist/app.js.map", icon: "📄", shouldIgnore: true, content: '{"version":3,"sources":["app.ts"]...}' },
+            { name: "dist/utils.js", icon: "📜", shouldIgnore: true, content: '"use strict";\nexports.helper = function() { return "hello"; };' },
+            { name: "build/bundle.js", icon: "📜", shouldIgnore: true, content: '// Webpack bundle output\n(function(modules) { ... })([...]);' },
+            { name: "build/bundle.min.js", icon: "📜", shouldIgnore: true, content: '!function(e){...}([...]);' },
+            { name: "coverage/lcov.info", icon: "📋", shouldIgnore: true, content: 'TN:\nSF:src/app.ts\nFNF:0\nFNH:0' },
+            { name: "coverage/index.html", icon: "📄", shouldIgnore: true, content: '<!DOCTYPE html><html>Coverage Report</html>' },
+            { name: "tsconfig.json", icon: "📦", shouldIgnore: false, content: '{\n  "compilerOptions": {\n    "outDir": "./dist"\n  }\n}' },
+            { name: "package.json", icon: "📦", shouldIgnore: false, content: '{\n  "name": "my-ts-app",\n  "scripts": { "build": "tsc" }\n}' }
+        ]
+    },
+    {
+        name: "Mixed Media",
+        files: [
+            { name: "assets/logo.svg", icon: "🎨", shouldIgnore: false, content: '<svg>...</svg>' },
+            { name: "assets/icon.png", icon: "🖼️", shouldIgnore: false, content: '[PNG binary data]' },
+            { name: "assets/hero.psd", icon: "🎨", shouldIgnore: true, content: '[Photoshop file - 45MB]\n\nLarge source file, keep out of git!' },
+            { name: "assets/mockup.sketch", icon: "🎨", shouldIgnore: true, content: '[Sketch file - 28MB]\n\nDesign source file' },
+            { name: "assets/video.mp4", icon: "🎬", shouldIgnore: true, content: '[Video file - 120MB]\n\nToo large for git!' },
+            { name: "uploads/avatar_123.jpg", icon: "🖼️", shouldIgnore: true, content: '[User uploaded file]\n\nUser uploads should not be in git' },
+            { name: "uploads/document.pdf", icon: "📄", shouldIgnore: true, content: '[User uploaded PDF]' },
+            { name: "uploads/.gitkeep", icon: "📄", shouldIgnore: false, content: '# Keep uploads folder structure' },
+            { name: "public/index.html", icon: "📄", shouldIgnore: false, content: '<!DOCTYPE html>\n<html>...</html>' },
+            { name: "public/favicon.ico", icon: "🖼️", shouldIgnore: false, content: '[favicon binary]' },
+            { name: "tmp/cache.json", icon: "📦", shouldIgnore: true, content: '{"cached": "data"}' },
+            { name: "tmp/session_abc123", icon: "📄", shouldIgnore: true, content: '[Session data - temporary]' }
+        ]
+    },
+    {
+        name: "Monorepo Madness",
+        files: [
+            { name: "packages/core/src/index.ts", icon: "📘", shouldIgnore: false, content: 'export * from "./lib";' },
+            { name: "packages/core/dist/index.js", icon: "📜", shouldIgnore: true, content: '"use strict";\n// compiled' },
+            { name: "packages/core/node_modules", icon: "📁", shouldIgnore: true, content: '[Package dependencies]' },
+            { name: "packages/ui/src/Button.tsx", icon: "⚛️", shouldIgnore: false, content: 'export const Button = () => <button>Click</button>;' },
+            { name: "packages/ui/dist/Button.js", icon: "📜", shouldIgnore: true, content: '"use strict";\n// compiled' },
+            { name: "packages/ui/.env.local", icon: "⚙️", shouldIgnore: true, content: 'STORYBOOK_API_KEY=sb_key_123' },
+            { name: "apps/web/src/App.tsx", icon: "⚛️", shouldIgnore: false, content: 'import { Button } from "@mono/ui";\nexport default App;' },
+            { name: "apps/web/.next", icon: "📁", shouldIgnore: true, content: '[Next.js build cache]' },
+            { name: "apps/web/node_modules", icon: "📁", shouldIgnore: true, content: '[App dependencies]' },
+            { name: "apps/api/src/server.ts", icon: "📘", shouldIgnore: false, content: 'import express from "express";' },
+            { name: "apps/api/dist/server.js", icon: "📜", shouldIgnore: true, content: '"use strict";' },
+            { name: "apps/api/.env", icon: "⚙️", shouldIgnore: true, content: 'DATABASE_URL=postgres://...\nJWT_SECRET=xxx' },
+            { name: "pnpm-lock.yaml", icon: "📄", shouldIgnore: false, content: 'lockfileVersion: 5.4\n...' },
+            { name: "turbo.json", icon: "📦", shouldIgnore: false, content: '{\n  "pipeline": { "build": {} }\n}' }
+        ]
     }
 ];
 
@@ -131,11 +198,25 @@ const folderContents = {
     'node_modules': ['express/', 'lodash/', 'react/', '... 1,244 more packages'],
     '__pycache__': ['main.cpython-39.pyc', 'utils.cpython-39.pyc'],
     'venv': ['bin/', 'lib/', 'include/', 'pyvenv.cfg'],
-    'dist': ['bundle.js', 'bundle.js.map', 'index.html'],
+    'dist': ['app.js', 'app.js.map', 'utils.js', 'index.html'],
     '.next': ['cache/', 'server/', 'static/', 'build-manifest.json'],
     '.terraform': ['providers/', 'modules/', 'terraform.tfstate'],
-    'coverage': ['lcov-report/', 'coverage-summary.json'],
-    '.cache': ['babel-loader/', 'terser-webpack-plugin/']
+    'coverage': ['lcov.info', 'index.html', 'lcov-report/'],
+    '.cache': ['babel-loader/', 'terser-webpack-plugin/'],
+    'config': ['database.json', 'database.local.json', 'app.json', 'secrets.json'],
+    'logs': ['app.log', 'error.log', '.gitkeep'],
+    'src': ['index.js', 'app.ts', 'utils.ts'],
+    'build': ['bundle.js', 'bundle.min.js'],
+    'assets': ['logo.svg', 'icon.png', 'hero.psd', 'mockup.sketch', 'video.mp4'],
+    'uploads': ['avatar_123.jpg', 'document.pdf', '.gitkeep'],
+    'public': ['index.html', 'favicon.ico'],
+    'tmp': ['cache.json', 'session_abc123'],
+    'packages': ['core/', 'ui/'],
+    'packages/core': ['src/', 'dist/', 'node_modules/'],
+    'packages/ui': ['src/', 'dist/', '.env.local'],
+    'apps': ['web/', 'api/'],
+    'apps/web': ['src/', '.next/', 'node_modules/'],
+    'apps/api': ['src/', 'dist/', '.env']
 };
 
 // Initialize game
@@ -151,6 +232,18 @@ function init() {
     gitignoreArea.addEventListener('click', (e) => {
         if (e.target !== gitignoreInput) {
             gitignoreInput.focus();
+        }
+    });
+    
+    // Keyboard shortcut: Ctrl+M to skip level
+    document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'm') {
+            e.preventDefault();
+            // Only skip if game is active (not on start screen or overlay)
+            if (startScreen.classList.contains('hidden') && overlay.classList.contains('hidden')) {
+                gameState.currentLevel++;
+                loadLevel(gameState.currentLevel);
+            }
         }
     });
 }
@@ -209,52 +302,77 @@ function loadLevel(levelIndex) {
     });
     fileTree.appendChild(gitignoreFile);
     
-    // Render files
+    // Group files by directory
+    const filesByDir = new Map();
+    const rootFiles = [];
+    
     level.files.forEach(file => {
-        const isFolder = file.icon === '📁' || !file.name.includes('.');
-        
-        const fileEl = document.createElement('div');
-        fileEl.className = 'file-item' + (isFolder ? ' folder' : '');
-        fileEl.dataset.name = file.name;
-        fileEl.dataset.shouldIgnore = file.shouldIgnore;
-        fileEl.dataset.isFolder = isFolder;
-        
-        const iconSpan = isFolder ? '📁' : (file.icon || getFileIcon(file.name));
-        
-        fileEl.innerHTML = `
-            <span class="icon">${iconSpan}</span>
-            <span class="name">${file.name}</span>
-            ${file.shouldIgnore 
-                ? '<span class="badge should-ignore">IGNORE</span>' 
-                : '<span class="badge keep">KEEP</span>'}
+        if (file.name.includes('/')) {
+            const parts = file.name.split('/');
+            const dir = parts[0];
+            if (!filesByDir.has(dir)) {
+                filesByDir.set(dir, []);
+            }
+            filesByDir.get(dir).push(file);
+        } else {
+            rootFiles.push(file);
+        }
+    });
+    
+    // Render root-level files and standalone folders first
+    rootFiles.forEach(file => {
+        renderFileItem(file, fileTree, level);
+    });
+    
+    // Render directory groups
+    filesByDir.forEach((files, dirName) => {
+        // Create folder element
+        const folderEl = document.createElement('div');
+        folderEl.className = 'file-item folder';
+        folderEl.dataset.name = dirName;
+        folderEl.innerHTML = `
+            <span class="icon">📁</span>
+            <span class="name">${dirName}</span>
         `;
         
-        if (isFolder) {
-            // Create folder contents container
-            const contentsEl = document.createElement('div');
-            contentsEl.className = 'folder-contents';
-            contentsEl.dataset.folder = file.name;
+        // Create folder contents
+        const contentsEl = document.createElement('div');
+        contentsEl.className = 'folder-contents';
+        contentsEl.dataset.folder = dirName;
+        
+        // Render each file in the folder
+        files.forEach(file => {
+            const fileName = file.name.split('/').slice(1).join('/');
+            const fileEl = document.createElement('div');
+            fileEl.className = 'file-item nested-file';
+            fileEl.dataset.name = file.name;
+            fileEl.dataset.shouldIgnore = file.shouldIgnore;
             
-            const contents = folderContents[file.name] || ['(contents not available)'];
-            contents.forEach(item => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'file-item';
-                const itemIcon = item.endsWith('/') ? '🔒' : '📄';
-                itemEl.innerHTML = `<span class="icon">${itemIcon}</span><span class="name">${item}</span>`;
-                contentsEl.appendChild(itemEl);
-            });
+            const icon = file.icon || getFileIcon(file.name);
+            
+            fileEl.innerHTML = `
+                <span class="icon">${icon}</span>
+                <span class="name">${fileName}</span>
+                ${file.shouldIgnore 
+                    ? '<span class="badge should-ignore">IGNORE</span>' 
+                    : '<span class="badge keep">KEEP</span>'}
+            `;
             
             fileEl.addEventListener('click', (e) => {
                 e.stopPropagation();
-                toggleFolder(fileEl, contentsEl);
+                showFilePreview(file);
             });
             
-            fileTree.appendChild(fileEl);
-            fileTree.appendChild(contentsEl);
-        } else {
-            fileEl.addEventListener('click', () => showFilePreview(file));
-            fileTree.appendChild(fileEl);
-        }
+            contentsEl.appendChild(fileEl);
+        });
+        
+        folderEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFolder(folderEl, contentsEl);
+        });
+        
+        fileTree.appendChild(folderEl);
+        fileTree.appendChild(contentsEl);
     });
     
     // Start timer
@@ -264,6 +382,53 @@ function loadLevel(levelIndex) {
     // Focus input
     switchToTab('gitignore');
     gitignoreInput.focus();
+}
+
+// Helper function to render a single file/folder item
+function renderFileItem(file, container, level) {
+    const isFolder = file.icon === '📁' || (!file.name.includes('.') && !file.name.includes('/'));
+    
+    const fileEl = document.createElement('div');
+    fileEl.className = 'file-item' + (isFolder ? ' folder' : '');
+    fileEl.dataset.name = file.name;
+    fileEl.dataset.shouldIgnore = file.shouldIgnore;
+    fileEl.dataset.isFolder = isFolder;
+    
+    const iconSpan = isFolder ? '📁' : (file.icon || getFileIcon(file.name));
+    
+    fileEl.innerHTML = `
+        <span class="icon">${iconSpan}</span>
+        <span class="name">${file.name}</span>
+        ${file.shouldIgnore 
+            ? '<span class="badge should-ignore">IGNORE</span>' 
+            : '<span class="badge keep">KEEP</span>'}
+    `;
+    
+    if (isFolder) {
+        const contentsEl = document.createElement('div');
+        contentsEl.className = 'folder-contents';
+        contentsEl.dataset.folder = file.name;
+        
+        const contents = folderContents[file.name] || ['(contents not available)'];
+        contents.forEach(item => {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'file-item';
+            const itemIcon = item.endsWith('/') ? '🔒' : '📄';
+            itemEl.innerHTML = `<span class="icon">${itemIcon}</span><span class="name">${item}</span>`;
+            contentsEl.appendChild(itemEl);
+        });
+        
+        fileEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFolder(fileEl, contentsEl);
+        });
+        
+        container.appendChild(fileEl);
+        container.appendChild(contentsEl);
+    } else {
+        fileEl.addEventListener('click', () => showFilePreview(file));
+        container.appendChild(fileEl);
+    }
 }
 
 function toggleFolder(folderEl, contentsEl) {

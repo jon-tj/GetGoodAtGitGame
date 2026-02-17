@@ -425,8 +425,21 @@ body {
     color: var(--text-secondary);
 }
 
+.folder-contents .file-item.nested-file {
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.folder-contents .file-item.nested-file:hover {
+    background: #2a2d2e;
+}
+
 .folder-contents .file-item .icon {
     font-size: 12px;
+}
+
+.folder-contents .file-item.nested-file .icon {
+    font-size: 14px;
 }
 
 .preview-hint {
