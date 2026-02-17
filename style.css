@@ -621,3 +621,103 @@ body {
 .pro-mode .file-item:hover {
     background: #3c3c3c;
 }
+
+/* Terminal Panel */
+.terminal-panel {
+    background: #1e1e1e;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+    flex-shrink: 0;
+}
+
+.terminal-panel.hidden {
+    display: none;
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 15px;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.terminal-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+}
+
+.terminal-close {
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1;
+    padding: 0 5px;
+}
+
+.terminal-close:hover {
+    color: var(--text-primary);
+}
+
+.terminal-body {
+    flex: 1;
+    padding: 10px 15px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+}
+
+#terminal-output {
+    flex: 1;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+}
+
+#terminal-output .cmd-line {
+    color: var(--text-secondary);
+}
+
+#terminal-output .cmd-line .cmd {
+    color: var(--text-primary);
+}
+
+#terminal-output .success {
+    color: var(--success);
+}
+
+#terminal-output .error {
+    color: var(--danger);
+}
+
+#terminal-output .info {
+    color: var(--warning);
+}
+
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-prompt {
+    color: var(--success);
+    white-space: nowrap;
+}
+
+#terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: inherit;
+    caret-color: var(--accent);
+}

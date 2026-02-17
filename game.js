@@ -8,7 +8,10 @@ let gameState = {
     ignoredFiles: [],
     wrongAttempts: 0,
     currentPreviewFile: null,
-    openTabs: ['gitignore']
+    openTabs: ['gitignore'],
+    // Git terminal state
+    stagedFiles: [],
+    committed: false
 };
 
 // Levels configuration
@@ -201,6 +204,12 @@ const tabGitignore = document.getElementById('tab-gitignore');
 const tabPreview = document.getElementById('tab-preview');
 const filePreviewContent = document.getElementById('file-preview-content');
 
+// Terminal elements
+const terminalPanel = document.getElementById('terminal-panel');
+const terminalInput = document.getElementById('terminal-input');
+const terminalOutput = document.getElementById('terminal-output');
+const terminalClose = document.getElementById('terminal-close');
+
 // Folder contents for display
 const folderContents = {
     'node_modules': ['express/', 'lodash/', 'react/', 'next/', '.bin/', '... 1,244 more'],
@@ -259,14 +268,27 @@ function init() {
         }
     });
     
-    // Keyboard shortcut: Ctrl+M to skip level
+    // Terminal event listeners
+    terminalInput.addEventListener('keydown', handleTerminalInput);
+    terminalClose.addEventListener('click', toggleTerminal);
+    
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+        // Ctrl+M to skip level
         if (e.ctrlKey && e.key === 'm') {
             e.preventDefault();
             // Only skip if game is active (not on start screen or overlay)
             if (startScreen.classList.contains('hidden') && overlay.classList.contains('hidden')) {
                 gameState.currentLevel++;
                 loadLevel(gameState.currentLevel);
+            }
+        }
+        
+        // Ctrl+ø to toggle terminal (ø is 'Dead' or 'ø' depending on keyboard)
+        if (e.ctrlKey && (e.key === 'ø' || e.key === 'Dead' || e.code === 'BracketLeft')) {
+            e.preventDefault();
+            if (startScreen.classList.contains('hidden') && overlay.classList.contains('hidden')) {
+                toggleTerminal();
             }
         }
     });
@@ -302,6 +324,12 @@ function loadLevel(levelIndex) {
     gameState.startTime = Date.now();
     gameState.currentPreviewFile = null;
     gameState.openTabs = ['gitignore'];
+    gameState.stagedFiles = [];
+    gameState.committed = false;
+    
+    // Reset terminal
+    terminalOutput.innerHTML = '';
+    terminalPanel.classList.add('hidden');
     
     // Clear UI
     gitignoreContent.innerHTML = '';
@@ -620,7 +648,7 @@ function addToGitignore(pattern) {
         
         const filesToIgnore = level.files.filter(f => f.shouldIgnore).length;
         if (allIgnoredFileNames.size >= filesToIgnore) {
-            levelComplete();
+            checkLevelComplete();
         }
     }
     
@@ -754,6 +782,27 @@ document.querySelector('.tab[data-tab="gitignore"]').addEventListener('click', (
     switchToTab('gitignore');
 });
 
+function checkLevelComplete() {
+    const level = levels[gameState.currentLevel];
+    
+    // Check if all files are ignored
+    const allIgnoredFileNames = new Set();
+    gameState.ignoredFiles.forEach(pat => {
+        const matches = findMatchingFiles(pat, level.files);
+        matches.forEach(f => {
+            if (f.shouldIgnore) allIgnoredFileNames.add(f.name);
+        });
+    });
+    
+    const filesToIgnore = level.files.filter(f => f.shouldIgnore).length;
+    const allFilesIgnored = allIgnoredFileNames.size >= filesToIgnore;
+    
+    // Check if gitignore is committed
+    if (allFilesIgnored && gameState.committed) {
+        levelComplete();
+    }
+}
+
 function levelComplete() {
     clearInterval(gameState.timerInterval);
     const elapsed = (Date.now() - gameState.startTime) / 1000;
@@ -829,6 +878,212 @@ function nextLevel() {
     overlay.classList.add('hidden');
     gameState.currentLevel++;
     loadLevel(gameState.currentLevel);
+}
+
+// Terminal Functions
+function toggleTerminal() {
+    terminalPanel.classList.toggle('hidden');
+    if (!terminalPanel.classList.contains('hidden')) {
+        terminalInput.focus();
+    }
+}
+
+function handleTerminalInput(e) {
+    if (e.key === 'Enter') {
+        const command = terminalInput.value.trim();
+        if (command) {
+            processTerminalCommand(command);
+            terminalInput.value = '';
+        }
+    }
+}
+
+function appendToTerminal(html, className = '') {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    if (className) div.className = className;
+    terminalOutput.appendChild(div);
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+function processTerminalCommand(command) {
+    // Echo the command
+    appendToTerminal(`<span class="cmd-line">~/my-project $ <span class="cmd">${escapeHtml(command)}</span></span>`);
+    
+    const parts = command.split(/\s+/);
+    const cmd = parts[0];
+    
+    if (cmd === 'git') {
+        processGitCommand(parts.slice(1));
+    } else if (cmd === 'clear') {
+        terminalOutput.innerHTML = '';
+    } else if (cmd === 'ls') {
+        const level = levels[gameState.currentLevel];
+        const files = level.files.map(f => f.name.split('/')[0]);
+        const uniqueFiles = [...new Set(files)];
+        appendToTerminal(uniqueFiles.join('  '), 'info');
+    } else if (cmd === 'help') {
+        appendToTerminal('Available commands:', 'info');
+        appendToTerminal('  git status     - Show staged and unstaged files', 'info');
+        appendToTerminal('  git add <file> - Stage a file for commit', 'info');
+        appendToTerminal('  git commit -m "msg" - Commit staged files', 'info');
+        appendToTerminal('  git commit -am "msg" - Stage all and commit', 'info');
+        appendToTerminal('  ls             - List files', 'info');
+        appendToTerminal('  clear          - Clear terminal', 'info');
+    } else {
+        appendToTerminal(`bash: ${cmd}: command not found`, 'error');
+    }
+}
+
+function processGitCommand(args) {
+    const subcommand = args[0];
+    
+    if (subcommand === 'status') {
+        showGitStatus();
+    } else if (subcommand === 'add') {
+        const filename = args.slice(1).join(' ');
+        gitAdd(filename);
+    } else if (subcommand === 'commit') {
+        gitCommit(args.slice(1));
+    } else {
+        appendToTerminal(`git: '${subcommand}' is not a git command.`, 'error');
+    }
+}
+
+function showGitStatus() {
+    appendToTerminal('On branch main', 'info');
+    
+    if (gameState.stagedFiles.length > 0) {
+        appendToTerminal('Changes to be committed:', 'success');
+        gameState.stagedFiles.forEach(f => {
+            appendToTerminal(`  new file:   ${f}`, 'success');
+        });
+    }
+    
+    // Show .gitignore as modified if there are entries
+    const unstagedChanges = [];
+    if (gameState.ignoredFiles.length > 0 && !gameState.stagedFiles.includes('.gitignore')) {
+        unstagedChanges.push('.gitignore');
+    }
+    
+    if (unstagedChanges.length > 0) {
+        appendToTerminal('Changes not staged for commit:', 'error');
+        unstagedChanges.forEach(f => {
+            appendToTerminal(`  modified:   ${f}`, 'error');
+        });
+    }
+    
+    if (gameState.stagedFiles.length === 0 && unstagedChanges.length === 0) {
+        appendToTerminal('nothing to commit, working tree clean', 'info');
+    }
+}
+
+function gitAdd(filename) {
+    if (!filename) {
+        appendToTerminal('Nothing specified, nothing added.', 'error');
+        return;
+    }
+    
+    // Handle "git add ." or "git add -A"
+    if (filename === '.' || filename === '-A') {
+        if (gameState.ignoredFiles.length > 0 && !gameState.stagedFiles.includes('.gitignore')) {
+            gameState.stagedFiles.push('.gitignore');
+            appendToTerminal('Added .gitignore to staging area', 'success');
+        } else {
+            appendToTerminal('No changes to add', 'info');
+        }
+        return;
+    }
+    
+    // Check if file exists
+    const validFiles = ['.gitignore'];
+    const level = levels[gameState.currentLevel];
+    level.files.forEach(f => validFiles.push(f.name));
+    
+    if (filename === '.gitignore') {
+        if (gameState.ignoredFiles.length === 0) {
+            appendToTerminal('No changes to .gitignore to stage', 'error');
+            return;
+        }
+        if (gameState.stagedFiles.includes('.gitignore')) {
+            appendToTerminal('.gitignore is already staged', 'info');
+            return;
+        }
+        gameState.stagedFiles.push('.gitignore');
+        appendToTerminal('Added .gitignore to staging area', 'success');
+    } else if (validFiles.includes(filename)) {
+        if (gameState.stagedFiles.includes(filename)) {
+            appendToTerminal(`${filename} is already staged`, 'info');
+            return;
+        }
+        gameState.stagedFiles.push(filename);
+        appendToTerminal(`Added ${filename} to staging area`, 'success');
+    } else {
+        appendToTerminal(`fatal: pathspec '${filename}' did not match any files`, 'error');
+    }
+}
+
+function gitCommit(args) {
+    // Parse commit arguments
+    let message = '';
+    let stageAll = false;
+    
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '-m') {
+            // Get the message (could be in quotes)
+            const remaining = args.slice(i + 1).join(' ');
+            const match = remaining.match(/^["'](.*)["']$|^(\S+)$/);
+            if (match) {
+                message = match[1] || match[2] || remaining.replace(/^["']|["']$/g, '');
+            } else {
+                message = remaining.replace(/^["']|["']$/g, '');
+            }
+            break;
+        } else if (args[i] === '-am') {
+            stageAll = true;
+        } else if (args[i].startsWith('-a')) {
+            stageAll = true;
+        }
+    }
+    
+    // Stage all if -a flag
+    if (stageAll) {
+        if (gameState.ignoredFiles.length > 0 && !gameState.stagedFiles.includes('.gitignore')) {
+            gameState.stagedFiles.push('.gitignore');
+        }
+    }
+    
+    if (gameState.stagedFiles.length === 0) {
+        appendToTerminal('nothing to commit, working tree clean', 'error');
+        return;
+    }
+    
+    if (!message) {
+        appendToTerminal('Aborting commit due to empty commit message.', 'error');
+        return;
+    }
+    
+    // Perform the commit
+    const fileCount = gameState.stagedFiles.length;
+    appendToTerminal(`[main abc1234] ${message}`, 'success');
+    appendToTerminal(` ${fileCount} file${fileCount > 1 ? 's' : ''} changed`, 'info');
+    
+    // Check if .gitignore was committed
+    if (gameState.stagedFiles.includes('.gitignore')) {
+        gameState.committed = true;
+    }
+    
+    // Clear staged files
+    gameState.stagedFiles = [];
+    
+    // Check if level is complete
+    checkLevelComplete();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Initialize on load
