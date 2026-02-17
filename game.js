@@ -791,6 +791,7 @@ function levelComplete() {
 }
 
 function showGameComplete() {
+    clearInterval(gameState.timerInterval);
     overlayTitle.textContent = '🎉 Congratulations!';
     overlayTitle.style.color = '#cca700';
     overlayMessage.textContent = 'You completed all levels!';
@@ -813,9 +814,12 @@ function retryLevel() {
     document.getElementById('btn-retry').textContent = 'Retry';
     
     if (gameState.currentLevel >= levels.length) {
-        // Restart game
+        // Restart game in pro mode
         gameState.currentLevel = 0;
         gameState.score = 0;
+        gameState.mode = 'pro';
+        document.getElementById('game-container').classList.add('pro-mode');
+        modeIndicator.textContent = '🔥 Pro Mode';
     }
     
     loadLevel(gameState.currentLevel);
