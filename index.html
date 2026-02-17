@@ -35,29 +35,28 @@
 
             <!-- Editor Area -->
             <div class="editor-area">
-                <div class="tabs">
-                    <div class="tab active">
+                <div class="tabs" id="editor-tabs">
+                    <div class="tab active" data-tab="gitignore">
                         <span class="tab-icon">📄</span>
-                        <span id="current-file-tab">.gitignore</span>
+                        <span>.gitignore</span>
                     </div>
                 </div>
-                <div class="editor-content">
+                
+                <!-- Gitignore Tab Content -->
+                <div class="editor-content tab-content active" id="tab-gitignore">
                     <div class="line-numbers" id="line-numbers"></div>
-                    <div class="code-area">
+                    <div class="code-area" id="gitignore-area">
                         <div id="gitignore-content" class="gitignore-entries"></div>
                         <input type="text" id="gitignore-input" placeholder="Type filename to ignore and press Enter..." autocomplete="off">
                     </div>
                 </div>
-            </div>
-
-            <!-- File Preview Panel -->
-            <div class="preview-panel" id="preview-panel">
-                <div class="preview-header">
-                    <span>FILE PREVIEW</span>
-                    <button id="close-preview" class="close-btn">×</button>
-                </div>
-                <div id="preview-content" class="preview-content">
-                    <p class="preview-hint">Click a file to preview its contents</p>
+                
+                <!-- File Preview Tab Content -->
+                <div class="editor-content tab-content" id="tab-preview">
+                    <div class="preview-line-numbers"></div>
+                    <div class="file-preview-content" id="file-preview-content">
+                        <p class="preview-hint">Select a file to view its contents</p>
+                    </div>
                 </div>
             </div>
         </div>

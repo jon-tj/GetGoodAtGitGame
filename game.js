@@ -6,7 +6,9 @@ let gameState = {
     startTime: null,
     timerInterval: null,
     ignoredFiles: [],
-    wrongAttempts: 0
+    wrongAttempts: 0,
+    currentPreviewFile: null,
+    openTabs: ['gitignore']
 };
 
 // Levels configuration
@@ -107,6 +109,7 @@ function getFileIcon(filename) {
 const fileTree = document.getElementById('file-tree');
 const gitignoreContent = document.getElementById('gitignore-content');
 const gitignoreInput = document.getElementById('gitignore-input');
+const gitignoreArea = document.getElementById('gitignore-area');
 const lineNumbers = document.getElementById('line-numbers');
 const timerDisplay = document.getElementById('timer');
 const scoreDisplay = document.getElementById('score');
@@ -118,8 +121,22 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayMessage = document.getElementById('overlay-message');
 const overlayStats = document.getElementById('overlay-stats');
 const startScreen = document.getElementById('start-screen');
-const previewPanel = document.getElementById('preview-panel');
-const previewContent = document.getElementById('preview-content');
+const editorTabs = document.getElementById('editor-tabs');
+const tabGitignore = document.getElementById('tab-gitignore');
+const tabPreview = document.getElementById('tab-preview');
+const filePreviewContent = document.getElementById('file-preview-content');
+
+// Folder contents for display
+const folderContents = {
+    'node_modules': ['express/', 'lodash/', 'react/', '... 1,244 more packages'],
+    '__pycache__': ['main.cpython-39.pyc', 'utils.cpython-39.pyc'],
+    'venv': ['bin/', 'lib/', 'include/', 'pyvenv.cfg'],
+    'dist': ['bundle.js', 'bundle.js.map', 'index.html'],
+    '.next': ['cache/', 'server/', 'static/', 'build-manifest.json'],
+    '.terraform': ['providers/', 'modules/', 'terraform.tfstate'],
+    'coverage': ['lcov-report/', 'coverage-summary.json'],
+    '.cache': ['babel-loader/', 'terser-webpack-plugin/']
+};
 
 // Initialize game
 function init() {
@@ -127,9 +144,15 @@ function init() {
     document.getElementById('btn-pro').addEventListener('click', () => startGame('pro'));
     document.getElementById('btn-retry').addEventListener('click', retryLevel);
     document.getElementById('btn-next').addEventListener('click', nextLevel);
-    document.getElementById('close-preview').addEventListener('click', closePreview);
     
     gitignoreInput.addEventListener('keydown', handleInput);
+    
+    // Click anywhere on gitignore area to focus input
+    gitignoreArea.addEventListener('click', (e) => {
+        if (e.target !== gitignoreInput) {
+            gitignoreInput.focus();
+        }
+    });
 }
 
 function startGame(mode) {
@@ -160,34 +183,78 @@ function loadLevel(levelIndex) {
     gameState.ignoredFiles = [];
     gameState.wrongAttempts = 0;
     gameState.startTime = Date.now();
+    gameState.currentPreviewFile = null;
+    gameState.openTabs = ['gitignore'];
     
     // Clear UI
     gitignoreContent.innerHTML = '';
     fileTree.innerHTML = '';
-    closePreview();
+    closePreviewTab();
     
     // Update indicators
     levelIndicator.textContent = `Level ${levelIndex + 1}: ${level.name}`;
     updateLineNumbers();
     updateProgress();
     
+    // Add .gitignore file at the top of the tree
+    const gitignoreFile = document.createElement('div');
+    gitignoreFile.className = 'file-item gitignore-file';
+    gitignoreFile.dataset.name = '.gitignore';
+    gitignoreFile.innerHTML = `
+        <span class="icon">📄</span>
+        <span class="name">.gitignore</span>
+    `;
+    gitignoreFile.addEventListener('click', () => {
+        switchToTab('gitignore');
+    });
+    fileTree.appendChild(gitignoreFile);
+    
     // Render files
     level.files.forEach(file => {
+        const isFolder = file.icon === '📁' || !file.name.includes('.');
+        
         const fileEl = document.createElement('div');
-        fileEl.className = 'file-item';
+        fileEl.className = 'file-item' + (isFolder ? ' folder' : '');
         fileEl.dataset.name = file.name;
         fileEl.dataset.shouldIgnore = file.shouldIgnore;
+        fileEl.dataset.isFolder = isFolder;
+        
+        const iconSpan = isFolder ? '📁' : (file.icon || getFileIcon(file.name));
         
         fileEl.innerHTML = `
-            <span class="icon">${file.icon || getFileIcon(file.name)}</span>
+            <span class="icon">${iconSpan}</span>
             <span class="name">${file.name}</span>
             ${file.shouldIgnore 
                 ? '<span class="badge should-ignore">IGNORE</span>' 
                 : '<span class="badge keep">KEEP</span>'}
         `;
         
-        fileEl.addEventListener('click', () => showFilePreview(file));
-        fileTree.appendChild(fileEl);
+        if (isFolder) {
+            // Create folder contents container
+            const contentsEl = document.createElement('div');
+            contentsEl.className = 'folder-contents';
+            contentsEl.dataset.folder = file.name;
+            
+            const contents = folderContents[file.name] || ['(contents not available)'];
+            contents.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'file-item';
+                const itemIcon = item.endsWith('/') ? '🔒' : '📄';
+                itemEl.innerHTML = `<span class="icon">${itemIcon}</span><span class="name">${item}</span>`;
+                contentsEl.appendChild(itemEl);
+            });
+            
+            fileEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFolder(fileEl, contentsEl);
+            });
+            
+            fileTree.appendChild(fileEl);
+            fileTree.appendChild(contentsEl);
+        } else {
+            fileEl.addEventListener('click', () => showFilePreview(file));
+            fileTree.appendChild(fileEl);
+        }
     });
     
     // Start timer
@@ -195,7 +262,13 @@ function loadLevel(levelIndex) {
     gameState.timerInterval = setInterval(updateTimer, 100);
     
     // Focus input
+    switchToTab('gitignore');
     gitignoreInput.focus();
+}
+
+function toggleFolder(folderEl, contentsEl) {
+    folderEl.classList.toggle('expanded');
+    contentsEl.classList.toggle('expanded');
 }
 
 function handleInput(e) {
@@ -300,25 +373,94 @@ function updateProgress() {
 }
 
 function showFilePreview(file) {
-    previewPanel.classList.add('visible');
+    gameState.currentPreviewFile = file;
     
+    // Add or update preview tab
+    let previewTab = document.querySelector('.tab[data-tab="preview"]');
+    if (!previewTab) {
+        previewTab = document.createElement('div');
+        previewTab.className = 'tab preview-tab';
+        previewTab.dataset.tab = 'preview';
+        previewTab.innerHTML = `
+            <span class="tab-icon">${file.icon || getFileIcon(file.name)}</span>
+            <span class="tab-name">${file.name}</span>
+            <span class="close-tab">×</span>
+        `;
+        previewTab.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close-tab')) {
+                closePreviewTab();
+            } else {
+                switchToTab('preview');
+            }
+        });
+        editorTabs.appendChild(previewTab);
+    } else {
+        previewTab.querySelector('.tab-icon').textContent = file.icon || getFileIcon(file.name);
+        previewTab.querySelector('.tab-name').textContent = file.name;
+    }
+    
+    // Update preview content
     let content = file.content;
+    
+    // Create content area
+    const contentArea = document.createElement('pre');
+    contentArea.className = 'file-content-text';
+    contentArea.textContent = content;
     
     // In pro mode, highlight potential API keys / secrets
     if (gameState.mode === 'pro') {
-        // Highlight things that look like API keys or secrets
-        content = content.replace(
+        // First escape HTML, then apply highlighting
+        const escaped = content
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        contentArea.innerHTML = escaped.replace(
             /(sk_live_[a-zA-Z0-9]+|sk_test_[a-zA-Z0-9]+|sk-proj-[a-zA-Z0-9]+|AKIA[A-Z0-9]{16}|ghp_[a-zA-Z0-9]+|npm_[a-zA-Z0-9]+|-----BEGIN[^-]+PRIVATE KEY-----|whsec_[a-zA-Z0-9]+|SG\.[a-zA-Z0-9]+)/g,
             '<span class="api-key">$1</span>'
         );
     }
     
-    previewContent.innerHTML = `<strong>${file.name}</strong>\n\n${content}`;
+    filePreviewContent.innerHTML = '';
+    filePreviewContent.appendChild(contentArea);
+    
+    // Update line numbers for preview
+    const lines = file.content.split('\n').length;
+    const previewLineNumbers = document.querySelector('.preview-line-numbers');
+    previewLineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
+    
+    // Switch to preview tab
+    switchToTab('preview');
 }
 
-function closePreview() {
-    previewPanel.classList.remove('visible');
+function switchToTab(tabName) {
+    // Update tab active states
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+    
+    // Update content visibility
+    tabGitignore.classList.toggle('active', tabName === 'gitignore');
+    tabPreview.classList.toggle('active', tabName === 'preview');
+    
+    if (tabName === 'gitignore') {
+        gitignoreInput.focus();
+    }
 }
+
+function closePreviewTab() {
+    const previewTab = document.querySelector('.tab[data-tab="preview"]');
+    if (previewTab) {
+        previewTab.remove();
+    }
+    gameState.currentPreviewFile = null;
+    switchToTab('gitignore');
+}
+
+// Keep gitignore tab clickable
+document.querySelector('.tab[data-tab="gitignore"]').addEventListener('click', () => {
+    switchToTab('gitignore');
+});
 
 function levelComplete() {
     clearInterval(gameState.timerInterval);
