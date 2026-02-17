@@ -282,19 +282,88 @@ function handleInput(e) {
     }
 }
 
-function addToGitignore(filename) {
-    const level = levels[gameState.currentLevel];
-    const file = level.files.find(f => f.name === filename || f.name.toLowerCase() === filename.toLowerCase());
+// Convert gitignore pattern to regex
+function gitignorePatternToRegex(pattern) {
+    let regexStr = '';
+    let i = 0;
     
-    // Check if already ignored
-    if (gameState.ignoredFiles.includes(filename)) {
+    while (i < pattern.length) {
+        const char = pattern[i];
+        const nextChar = pattern[i + 1];
+        
+        if (char === '*' && nextChar === '*') {
+            // ** matches everything including /
+            regexStr += '.*';
+            i += 2;
+        } else if (char === '*') {
+            // * matches everything except /
+            regexStr += '[^/]*';
+            i++;
+        } else if (char === '?') {
+            // ? matches single character except /
+            regexStr += '[^/]';
+            i++;
+        } else if (char === '[') {
+            // Character class - find closing bracket
+            const closeIdx = pattern.indexOf(']', i);
+            if (closeIdx !== -1) {
+                regexStr += pattern.slice(i, closeIdx + 1);
+                i = closeIdx + 1;
+            } else {
+                regexStr += '\\[';
+                i++;
+            }
+        } else if ('.+^${}()|\\'.includes(char)) {
+            // Escape regex special chars
+            regexStr += '\\' + char;
+            i++;
+        } else {
+            regexStr += char;
+            i++;
+        }
+    }
+    
+    return new RegExp(`^${regexStr}$`, 'i');
+}
+
+// Check if a filename matches a gitignore pattern
+function matchesGitignorePattern(filename, pattern) {
+    // Handle negation
+    if (pattern.startsWith('!')) {
+        return false; // Negation patterns are handled separately
+    }
+    
+    const regex = gitignorePatternToRegex(pattern);
+    return regex.test(filename);
+}
+
+// Find all files that match a pattern
+function findMatchingFiles(pattern, files) {
+    const isNegation = pattern.startsWith('!');
+    const actualPattern = isNegation ? pattern.slice(1) : pattern;
+    
+    return files.filter(file => {
+        const regex = gitignorePatternToRegex(actualPattern);
+        return regex.test(file.name);
+    });
+}
+
+function addToGitignore(pattern) {
+    const level = levels[gameState.currentLevel];
+    const isNegation = pattern.startsWith('!');
+    
+    // Check if already in gitignore
+    if (gameState.ignoredFiles.includes(pattern)) {
         showInputError('Already in .gitignore!');
         return;
     }
     
-    // Check if file exists
-    if (!file) {
-        showInputError('File not found!');
+    // Find matching files
+    const matchingFiles = findMatchingFiles(pattern, level.files);
+    
+    // Check if pattern matches anything
+    if (matchingFiles.length === 0) {
+        showInputError('No matching files!');
         gameState.wrongAttempts++;
         return;
     }
@@ -302,42 +371,74 @@ function addToGitignore(filename) {
     // Add entry to .gitignore display
     const entry = document.createElement('div');
     entry.className = 'gitignore-entry';
-    entry.textContent = filename;
+    entry.textContent = pattern;
     
-    if (!file.shouldIgnore) {
-        // Wrong! This file shouldn't be ignored
+    // Check if any matched file shouldn't be ignored (or for negation, should be ignored)
+    const wrongFiles = matchingFiles.filter(f => isNegation ? f.shouldIgnore : !f.shouldIgnore);
+    const correctFiles = matchingFiles.filter(f => isNegation ? !f.shouldIgnore : f.shouldIgnore);
+    
+    if (wrongFiles.length > 0 && correctFiles.length === 0) {
+        // All matches are wrong
         entry.classList.add('wrong');
         gameState.wrongAttempts++;
         gameState.score = Math.max(0, gameState.score - 50);
         
-        // Mark file as wrong in tree
-        const fileEl = document.querySelector(`.file-item[data-name="${file.name}"]`);
-        if (fileEl) {
-            fileEl.classList.add('wrong');
-            setTimeout(() => fileEl.classList.remove('wrong'), 300);
-        }
+        // Mark files as wrong in tree
+        wrongFiles.forEach(file => {
+            const fileEl = document.querySelector(`.file-item[data-name="${file.name}"]`);
+            if (fileEl) {
+                fileEl.classList.add('wrong');
+                setTimeout(() => fileEl.classList.remove('wrong'), 300);
+            }
+        });
         
         // Remove wrong entry after animation
         gitignoreContent.appendChild(entry);
         setTimeout(() => entry.remove(), 500);
     } else {
-        // Correct!
-        gameState.ignoredFiles.push(filename);
-        gameState.score += 100;
+        // At least some correct matches
+        gameState.ignoredFiles.push(pattern);
+        
+        // Award points for correct matches, penalize for wrong ones
+        gameState.score += correctFiles.length * 100;
+        if (wrongFiles.length > 0) {
+            gameState.score = Math.max(0, gameState.score - wrongFiles.length * 25);
+            gameState.wrongAttempts += wrongFiles.length;
+        }
+        
         gitignoreContent.appendChild(entry);
         
-        // Mark file as ignored in tree
-        const fileEl = document.querySelector(`.file-item[data-name="${file.name}"]`);
-        if (fileEl) {
-            fileEl.classList.add('ignored');
-        }
+        // Mark correct files as ignored in tree
+        correctFiles.forEach(file => {
+            const fileEl = document.querySelector(`.file-item[data-name="${file.name}"]`);
+            if (fileEl) {
+                fileEl.classList.add('ignored');
+            }
+        });
+        
+        // Mark wrong files briefly
+        wrongFiles.forEach(file => {
+            const fileEl = document.querySelector(`.file-item[data-name="${file.name}"]`);
+            if (fileEl) {
+                fileEl.classList.add('wrong');
+                setTimeout(() => fileEl.classList.remove('wrong'), 300);
+            }
+        });
         
         updateLineNumbers();
         updateProgress();
         
-        // Check if level complete
+        // Check if level complete - count unique ignored files
+        const allIgnoredFileNames = new Set();
+        gameState.ignoredFiles.forEach(pat => {
+            const matches = findMatchingFiles(pat, level.files);
+            matches.forEach(f => {
+                if (f.shouldIgnore) allIgnoredFileNames.add(f.name);
+            });
+        });
+        
         const filesToIgnore = level.files.filter(f => f.shouldIgnore).length;
-        if (gameState.ignoredFiles.length >= filesToIgnore) {
+        if (allIgnoredFileNames.size >= filesToIgnore) {
             levelComplete();
         }
     }
@@ -369,7 +470,17 @@ function updateTimer() {
 function updateProgress() {
     const level = levels[gameState.currentLevel];
     const total = level.files.filter(f => f.shouldIgnore).length;
-    progressDisplay.textContent = `${gameState.ignoredFiles.length} / ${total} files ignored`;
+    
+    // Count unique ignored files from all patterns
+    const ignoredFileNames = new Set();
+    gameState.ignoredFiles.forEach(pattern => {
+        const matches = findMatchingFiles(pattern, level.files);
+        matches.forEach(f => {
+            if (f.shouldIgnore) ignoredFileNames.add(f.name);
+        });
+    });
+    
+    progressDisplay.textContent = `${ignoredFileNames.size} / ${total} files ignored`;
 }
 
 function showFilePreview(file) {
