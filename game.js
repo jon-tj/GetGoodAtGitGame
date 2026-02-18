@@ -209,6 +209,7 @@ const terminalPanel = document.getElementById('terminal-panel');
 const terminalInput = document.getElementById('terminal-input');
 const terminalOutput = document.getElementById('terminal-output');
 const terminalClose = document.getElementById('terminal-close');
+const terminalBtn = document.getElementById('terminal-btn');
 
 // Folder contents for display
 const folderContents = {
@@ -271,6 +272,7 @@ function init() {
     // Terminal event listeners
     terminalInput.addEventListener('keydown', handleTerminalInput);
     terminalClose.addEventListener('click', toggleTerminal);
+    terminalBtn.addEventListener('click', toggleTerminal);
     
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
@@ -330,6 +332,8 @@ function loadLevel(levelIndex) {
     // Reset terminal
     terminalOutput.innerHTML = '';
     terminalPanel.classList.add('hidden');
+    terminalBtn.classList.remove('ready', 'bounce');
+    terminalBtn.textContent = 'Terminal';
     
     // Clear UI
     gitignoreContent.innerHTML = '';
@@ -797,8 +801,24 @@ function checkLevelComplete() {
     const filesToIgnore = level.files.filter(f => f.shouldIgnore).length;
     const allFilesIgnored = allIgnoredFileNames.size >= filesToIgnore;
     
+    // Update terminal button state
+    if (allFilesIgnored && !gameState.committed) {
+        // Only bounce if just became ready
+        if (!terminalBtn.classList.contains('ready')) {
+            terminalBtn.classList.add('ready', 'bounce');
+            terminalBtn.textContent = '⚡ Commit Now!';
+            // Remove bounce class after animation
+            setTimeout(() => terminalBtn.classList.remove('bounce'), 500);
+        }
+    } else {
+        terminalBtn.classList.remove('ready', 'bounce');
+        terminalBtn.textContent = 'Terminal';
+    }
+    
     // Check if gitignore is committed
     if (allFilesIgnored && gameState.committed) {
+        terminalBtn.classList.remove('ready', 'bounce');
+        terminalBtn.textContent = 'Terminal';
         levelComplete();
     }
 }
